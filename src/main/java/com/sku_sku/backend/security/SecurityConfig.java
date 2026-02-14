@@ -23,6 +23,8 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final CustomAuthorizationRequestResolver customAuthorizationRequestResolver;
+    private final RedisOAuth2AuthorizationRequestRepository redisOAuth2AuthorizationRequestRepository; // (준하) Redis 기반
+                                                                                                       // 인증 요청 저장소 추가
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -34,23 +36,27 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(auth -> auth
-                                .authorizationRequestResolver(customAuthorizationRequestResolver) // ✅ 추가
+                                .authorizationRequestResolver(customAuthorizationRequestResolver)
+                                .authorizationRequestRepository(redisOAuth2AuthorizationRequestRepository) // (준하) 세션 대신
+                                                                                                           // Redis에
+                                                                                                           // OAuth2 인증
+                                                                                                           // 요청 저장
                         )
-                        .successHandler(oAuth2SuccessHandler)
-                )
+                        .successHandler(oAuth2SuccessHandler))
                 .authorizeHttpRequests(authorize -> authorize
-                                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api/auth/**").permitAll()
-                                // ADMIN_LION
-                                .requestMatchers("/admin/assignment/**",
-                                                "/admin/schedule/**",
-                                                "/admin/lecture/**",
-                                                "/admin/project/**",
-                                                "/admin/reviewQuiz/**").hasRole("ADMIN_LION")
-                                // ALL
-                                .requestMatchers("/project/all").permitAll()
-                                .requestMatchers("/oauth2/redirect").permitAll()
-                                .anyRequest().authenticated()
-//                                .anyRequest().permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api/auth/**").permitAll()
+                        // ADMIN_LION
+                        .requestMatchers("/admin/assignment/**",
+                                "/admin/schedule/**",
+                                "/admin/lecture/**",
+                                "/admin/project/**",
+                                "/admin/reviewQuiz/**")
+                        .hasRole("ADMIN_LION")
+                        // ALL
+                        .requestMatchers("/project/all").permitAll()
+                        .requestMatchers("/oauth2/redirect").permitAll()
+                        .anyRequest().authenticated()
+                // .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -60,7 +66,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "https://sku-sku.com", "http://localhost:3000", "https://legacy.sku-sku.com"));
+        config.setAllowedOrigins(List.of("http://localhost:5173", "https://sku-sku.com", "http://localhost:3000",
+                "https://legacy.sku-sku.com"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

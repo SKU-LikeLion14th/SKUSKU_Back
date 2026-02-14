@@ -13,14 +13,14 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
-import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.UUID;
 
+// (준하) OAuth2 로그인 성공 시 JWT 발급 및 redirect URL 처리 수정
+// redirect URL을 state 파라미터 대신 Redis에서 조회하도록 변경
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
@@ -36,7 +36,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private String isSameSite;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+            Authentication authentication)
             throws IOException {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
@@ -63,7 +64,19 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             redisTemplate.opsForValue().set("refresh:" + email, refreshToken, Duration.ofDays(30));
         }
 
-        String redirectUrl = request.getParameter("state");
+        // (준하) Redis에서 redirect URL 조회 후 삭제 (일회용)
+        String state = request.getParameter("state");
+        String redirectUrl = null;
+        if (state != null) {
+            redirectUrl = redisTemplate.opsForValue().get("oauth2_redirect:" + state);
+            if (redirectUrl != null) {
+                redisTemplate.delete("oauth2_redirect:" + state); // (준하) 사용 후 삭제
+            }
+        }
+        if (redirectUrl == null || redirectUrl.isBlank()) {
+            redirectUrl = "/"; // (준하) 기본값
+        }
+
         System.out.println("redirectUrl: " + redirectUrl);
 
         // 유저가 로그인 시도하기 전에 요청했던 URL로 리디렉트
