@@ -30,7 +30,7 @@ jobs:
       run: |
         mkdir -p src/main/resources
         echo "${{ secrets.APPLICATION_YML }}" | base64 -d > src/main/resources/application-build.yml     
-    # - name: Retrieve secrets 
+    # - name: Retrieve secrets
     #   env:
     #     MY_SECRETS_ARCHIVE: ${{ secrets.MY_SECRETS_ARCHIVE }}
     #   run: |
@@ -110,6 +110,6 @@ jobs:
         distribution: 'temurin'
 
     # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
-    # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
+    # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md 
     - name: Generate and submit dependency graph
       uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
