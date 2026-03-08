@@ -90,10 +90,11 @@ jobs:
       #       fi"
       - name: Execute remote commands
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "
-            sudo fuser -k 8083/tcp &&
-            cd /home/ubuntu/backend &&
-            nohup java -jar *-SNAPSHOT.jar --spring.profiles.active=build > nohup.out 2>&1 &"
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+            sudo fuser -k 8083/tcp || true
+            cd /home/${{ secrets.EC2_USER }}/backend || exit 1
+            nohup java -jar *-SNAPSHOT.jar --spring.profiles.active=build --server.port=8083 > nohup.out 2>&1 &
+          "
 
   dependency-submission:
 
