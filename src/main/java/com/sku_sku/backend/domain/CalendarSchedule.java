@@ -14,7 +14,7 @@ import java.time.LocalDate;
 public class CalendarSchedule {
     @Id
     @GeneratedValue
-    private Long id; // pk
+    private Long id;// pk
 
     private String title; // 캘린더 일정 제목
 
