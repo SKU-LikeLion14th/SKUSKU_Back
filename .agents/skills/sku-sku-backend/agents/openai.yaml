@@ -1,0 +1,6 @@
+interface:
+  display_name: "SKUSKU Backend"
+  short_description: "Debug and extend the SKUSKU_Back Spring Boot backend safely."
+  default_prompt: "Work on SKUSKU_Back by following repository conventions, checking environment dependencies first, and validating with the smallest safe command."
+policy:
+  allow_implicit_invocation: true
